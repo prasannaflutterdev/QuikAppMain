@@ -14,7 +14,6 @@ add_usage_description() {
   fi
 }
 
-
 [[ "$IS_CAMERA" == "true" ]] && add_usage_description "NSCameraUsageDescription" "This app uses the camera to scan QR codes or capture images."
 [[ "$IS_MIC" == "true" ]] && add_usage_description "NSMicrophoneUsageDescription" "This app uses the microphone to record audio or enable voice input."
 [[ "$IS_CHATBOT" == "true" ]] && add_usage_description "NSSpeechRecognitionUsageDescription" "This app uses speech recognition to convert your voice into text."
