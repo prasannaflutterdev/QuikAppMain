@@ -13,7 +13,7 @@ echo "✅ Injecting iOS permission usage descriptions..." | tee "$LOG_FILE"
 : "${IS_CALENDAR:=false}"
 : "${IS_STORAGE:=false}"
 : "${IS_BIOMETRIC:=false}"
-: "${PUSHNOTIFY:=false}"
+: "${PUSH_NOTIFY:=false}"
 
 add_usage_description() {
   KEY=$1
@@ -39,7 +39,7 @@ add_usage_description() {
 [[ "$IS_BIOMETRIC" == "true" ]] && add_usage_description "NSFaceIDUsageDescription" "This app uses Face ID to securely verify your identity."
 
 # ✅ Push notification support
-if [[ "$PUSHNOTIFY" == "true" ]]; then
+if [[ "$PUSH_NOTIFY" == "true" ]]; then
   echo "🔔 Adding push notification keys to Info.plist..." | tee -a "$LOG_FILE"
 
   # Add UIBackgroundModes
@@ -91,7 +91,7 @@ exit 0
 #[[ "$IS_BIOMETRIC" == "true" ]] && add_usage_description "NSFaceIDUsageDescription" "This app uses Face ID to securely verify your identity."
 #
 ## ✅ Inject iOS push notification support if enabled
-#if [[ "$PUSHNOTIFY" == "true" ]]; then
+#if [[ "$PUSH_NOTIFY" == "true" ]]; then
 #  echo "🔔 Adding push notification keys to Info.plist..."
 #
 #  # Add UIBackgroundModes
