@@ -2183,9 +2183,9 @@ workflows:
           project.save
           RUBY
           cd ..
-
           echo "🧾 Ensuring entitlements file exists..."
           mkdir -p ios/Runner
+
           cat > ios/Runner/Runner.entitlements <<EOF_ENTITLEMENTS
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -2199,9 +2199,41 @@ workflows:
             </array>
             <key>get-task-allow</key>
             <false/>
+          EOF_ENTITLEMENTS
+
+          # Conditionally add push notification entitlement
+          if [ "$PUSH_NOTIFY" == "true" ]; then
+            echo "  <key>aps-environment</key>" >> ios/Runner/Runner.entitlements
+            echo "  <string>production</string>" >> ios/Runner/Runner.entitlements
+            echo "🔔 PUSH_NOTIFY enabled — added aps-environment: production"
+          else
+            echo "🚫 PUSH_NOTIFY is not true — skipping aps-environment"
+          fi
+
+          # Close the plist
+          cat >> ios/Runner/Runner.entitlements <<EOF_END
           </dict>
           </plist>
-          EOF_ENTITLEMENTS
+          EOF_END
+#
+#          echo "🧾 Ensuring entitlements file exists..."
+#          mkdir -p ios/Runner
+#          cat > ios/Runner/Runner.entitlements <<EOF_ENTITLEMENTS
+#          <?xml version="1.0" encoding="UTF-8"?>
+#          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+#          <plist version="1.0">
+#          <dict>
+#            <key>application-identifier</key>
+#            <string>${APPLE_TEAM_ID}.${BUNDLE_ID}</string>
+#            <key>keychain-access-groups</key>
+#            <array>
+#              <string>${APPLE_TEAM_ID}.*</string>
+#            </array>
+#            <key>get-task-allow</key>
+#            <false/>
+#          </dict>
+#          </plist>
+#          EOF_ENTITLEMENTS
       - name: 📝 Inject dynamic Podfile
         script: |
           ./tools/scripts/generate_podfile.sh
