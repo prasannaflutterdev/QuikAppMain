@@ -15,6 +15,7 @@ echo "✅ Injecting iOS permission usage descriptions..." | tee "$LOG_FILE"
 : "${IS_BIOMETRIC:=false}"
 : "${PUSH_NOTIFY:=false}"
 
+
 add_usage_description() {
   KEY=$1
   MESSAGE=$2
