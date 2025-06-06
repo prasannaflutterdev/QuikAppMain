@@ -1294,6 +1294,79 @@ definitions:
     - &key_store
       name: Setup Android keystore and insert Gradle signing block (KTS)
       script: |
+        set -e
+        echo "📦 Setting up Android signing configuration..."
+
+        # Validate required environment variables
+        : "${KEY_STORE:?Missing KEY_STORE}"
+        : "${CM_KEYSTORE_PASSWORD:?Missing CM_KEYSTORE_PASSWORD}"
+        : "${CM_KEY_ALIAS:?Missing CM_KEY_ALIAS}"
+        : "${CM_KEY_PASSWORD:?Missing CM_KEY_PASSWORD}"
+
+        mkdir -p android/app
+
+        echo "📥 Downloading keystore..."
+        max_attempts=3
+        for attempt in $(seq 1 $max_attempts); do
+          if curl -fsSL -o android/app/keystore.jks "$KEY_STORE"; then
+            echo "✅ Keystore downloaded successfully"
+            break
+          else
+            echo "❌ Attempt $attempt failed"
+            [ "$attempt" -eq "$max_attempts" ] && exit 1
+            sleep 5
+          fi
+        done
+
+        echo "📝 Writing key.properties..."
+        cat > android/key.properties <<EOF
+        storeFile=keystore.jks
+        storePassword="$CM_KEYSTORE_PASSWORD"
+        keyAlias="$CM_KEY_ALIAS"
+        keyPassword="$CM_KEY_PASSWORD"
+        EOF
+
+        GRADLE_FILE="android/app/build.gradle.kts"
+
+        echo "🔐 Configuring Gradle signing..."
+
+        if ! grep -q 'val keystoreProperties' "$GRADLE_FILE"; then
+          echo "🔧 Adding keystoreProperties block..."
+          sed -i '1s;^;val keystoreProperties = Properties().apply {\n    load(File(rootProject.rootDir, "android/key.properties").inputStream())\n}\n\n;' "$GRADLE_FILE"
+        else
+          echo "✅ keystoreProperties block already present"
+        fi
+
+        if ! grep -q 'signingConfigs' "$GRADLE_FILE"; then
+          echo "🔧 Injecting signingConfigs block..."
+          awk '/android\s*{/{print; print "    signingConfigs {\n        create(\"release\") {\n            storeFile = file(\"keystore.jks\")\n            storePassword = keystoreProperties[\"storePassword\"] as String\n            keyAlias = keystoreProperties[\"keyAlias\"] as String\n            keyPassword = keystoreProperties[\"keyPassword\"] as String\n            enableV1Signing = true\n            enableV2Signing = true\n            enableV3Signing = true\n        }\n    }"; next}1' "$GRADLE_FILE" > tmp && mv tmp "$GRADLE_FILE"
+        else
+          echo "✅ signingConfigs already exists"
+        fi
+
+        if grep -q "buildTypes" "$GRADLE_FILE"; then
+          if ! grep -q "signingConfig = signingConfigs.getByName(\"release\")" "$GRADLE_FILE"; then
+            echo "🔧 Injecting release buildType config..."
+            awk '/buildTypes\s*{/{print; print "        getByName(\"release\") {\n            isMinifyEnabled = true\n            isShrinkResources = true\n            signingConfig = signingConfigs.getByName(\"release\")\n            proguardFiles(getDefaultProguardFile(\"proguard-android-optimize.txt\"), \"proguard-rules.pro\")\n        }"; next}1' "$GRADLE_FILE" > tmp && mv tmp "$GRADLE_FILE"
+          else
+            echo "✅ release buildType signing config already present"
+          fi
+        else
+          echo "❌ buildTypes block not found in $GRADLE_FILE"
+          exit 1
+        fi
+
+        echo "✅ Android signing configuration completed"
+
+        echo "🔍 Verifying signing setup..."
+        [ -f "android/app/keystore.jks" ] && [ -f "android/key.properties" ] && echo "✅ All signing files are ready" || {
+          echo "❌ Verification failed"
+          exit 1
+        }
+
+    - &key_store2
+      name: Setup Android keystore and insert Gradle signing block (KTS)
+      script: |
           echo "📦 Setting up Android signing configuration..."
           
           # Validate keystore environment variables
