@@ -52,7 +52,8 @@ DART_DEFINES="--dart-define=WEB_URL=\"$WEB_URL\" \
   --dart-define=CM_KEY_PASSWORD=\"$CM_KEY_PASSWORD\""
 
 echo "✅ Building APK..."
-flutter build apk --release $DART_DEFINES --verbose > flutter_build_apk.log
+flutter build apk --release $DART_DEFINES --verbose | tee flutter_build_apk.log
+#flutter build apk --release $DART_DEFINES --verbose > flutter_build_apk.log
 if [ $? -ne 0 ]; then
   echo "❌ APK build failed"
   cat flutter_build_apk.log
@@ -61,7 +62,8 @@ fi
 echo "✅ APK build completed."
 
 echo "✅ Building AppBundle..."
-flutter build appbundle --release $DART_DEFINES --verbose > flutter_build_appbundle.log
+flutter build appbundle --release $DART_DEFINES --verbose | tee flutter_build_appbundle.log
+#flutter build appbundle --release $DART_DEFINES --verbose > flutter_build_appbundle.log
 if [ $? -ne 0 ]; then
   echo "❌ AppBundle build failed"
   cat flutter_build_appbundle.log
