@@ -2105,8 +2105,8 @@ workflows:
       - *set_launcher_icons
       - name: Build APK and AAB
         script: |
-            chmod +x ./scripts/build.sh
-            ./scripts/build.sh
+          
+          ./scripts/build.sh
       - name: Validate APK Signing
         script: |
           echo "🔍 Validating APK signature..."
@@ -2114,8 +2114,6 @@ workflows:
     artifacts:
       - build/**/outputs/apk/**/*.apk
       - build/**/outputs/bundle/**/*.aab
-#      - build/**/outputs/mapping/release/mapping.txt
-      - flutter_drive.log
     publishing:
       email:
         recipients:
