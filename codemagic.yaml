@@ -93,51 +93,61 @@ definitions:
         TEMPLATE="android/app/src/main/AndroidManifest_template.xml"
         TARGET="android/app/src/main/AndroidManifest.xml"
         PERMISSIONS=""
-    
-        echo "✅ Injecting Android permissions..."
-    
+
+        echo "🔧 Checking environment flags for permission injection..."
+
         if [[ "$IS_CAMERA" == "true" ]]; then
-        PERMISSIONS+="<uses-permission android:name=\"android.permission.CAMERA\" />\n"
+          echo "📸 Adding CAMERA permission"
+          PERMISSIONS+="<uses-permission android:name=\"android.permission.CAMERA\" />\n"
         fi
-    
+
         if [[ "$IS_MIC" == "true" ]]; then
-        PERMISSIONS+="<uses-permission android:name=\"android.permission.RECORD_AUDIO\" />\n"
+          echo "🎙️ Adding MICROPHONE permission"
+          PERMISSIONS+="<uses-permission android:name=\"android.permission.RECORD_AUDIO\" />\n"
         fi
-    
+
         if [[ "$IS_LOCATION" == "true" ]]; then
-        PERMISSIONS+="<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" />\n"
-        PERMISSIONS+="<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\" />\n"
+          echo "📍 Adding LOCATION permissions"
+          PERMISSIONS+="<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" />\n"
+          PERMISSIONS+="<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\" />\n"
         fi
-    
+
         if [[ "$IS_CONTACT" == "true" ]]; then
-        PERMISSIONS+="<uses-permission android:name=\"android.permission.READ_CONTACTS\" />\n"
+          echo "📇 Adding CONTACT permission"
+          PERMISSIONS+="<uses-permission android:name=\"android.permission.READ_CONTACTS\" />\n"
         fi
-    
+
         if [[ "$IS_CALENDAR" == "true" ]]; then
-        PERMISSIONS+="<uses-permission android:name=\"android.permission.READ_CALENDAR\" />\n"
-        PERMISSIONS+="<uses-permission android:name=\"android.permission.WRITE_CALENDAR\" />\n"
+          echo "🗓️ Adding CALENDAR permissions"
+          PERMISSIONS+="<uses-permission android:name=\"android.permission.READ_CALENDAR\" />\n"
+          PERMISSIONS+="<uses-permission android:name=\"android.permission.WRITE_CALENDAR\" />\n"
         fi
-    
+
         if [[ "$IS_NOTIFICATION" == "true" ]]; then
-        PERMISSIONS+="<uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\" />\n"
+          echo "🔔 Adding NOTIFICATION permission"
+          PERMISSIONS+="<uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\" />\n"
         fi
-    
+
         if [[ "$IS_BIOMETRIC" == "true" ]]; then
-        PERMISSIONS+="<uses-permission android:name=\"android.permission.USE_BIOMETRIC\" />\n"
-        PERMISSIONS+="<uses-permission android:name=\"android.permission.USE_FINGERPRINT\" />\n"
+          echo "🧬 Adding BIOMETRIC permissions"
+          PERMISSIONS+="<uses-permission android:name=\"android.permission.USE_BIOMETRIC\" />\n"
+          PERMISSIONS+="<uses-permission android:name=\"android.permission.USE_FINGERPRINT\" />\n"
         fi
-    
+
         if [[ "$IS_STORAGE" == "true" ]]; then
-        PERMISSIONS+="<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" />\n"
-        PERMISSIONS+="<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />\n"
-        PERMISSIONS+="<uses-permission android:name=\"android.permission.READ_MEDIA_IMAGES\" />\n"
-        PERMISSIONS+="<uses-permission android:name=\"android.permission.READ_MEDIA_VIDEO\" />\n"
-        PERMISSIONS+="<uses-permission android:name=\"android.permission.READ_MEDIA_AUDIO\" />\n"
+          echo "💾 Adding STORAGE permissions"
+          PERMISSIONS+="<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" />\n"
+          PERMISSIONS+="<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />\n"
+          PERMISSIONS+="<uses-permission android:name=\"android.permission.READ_MEDIA_IMAGES\" />\n"
+          PERMISSIONS+="<uses-permission android:name=\"android.permission.READ_MEDIA_VIDEO\" />\n"
+          PERMISSIONS+="<uses-permission android:name=\"android.permission.READ_MEDIA_AUDIO\" />\n"
         fi
-    
-        # Replace placeholder in template
+
+        echo "✍️ Injecting permissions into AndroidManifest.xml..."
         sed "s|<!-- PERMISSION_PLACEHOLDER -->|$PERMISSIONS|" "$TEMPLATE" > "$TARGET"
-        echo "✅ Generated AndroidManifest.xml"
+
+        echo "✅ AndroidManifest.xml generated with dynamic permissions"
+    
 
     - &permission_ios
       name: Inject iOS permission strings into Info.plist
@@ -2007,31 +2017,30 @@ workflows:
       flutter: stable
       java: 17
     scripts:
-      - name: Uninstall existing app
+      - name: Make scripts executable (safe)
         script: |
-          echo "🗑️ Uninstalling existing app if present..."
-          adb devices | grep -v "List" | while read -r line; do
-            if [ ! -z "$line" ]; then
-              device_id=$(echo $line | cut -f1)
-              echo "📱 Uninstalling from device: $device_id"
-              adb -s $device_id uninstall "$PKG_NAME" || true
-            fi
-          done
-          echo "✅ Uninstall step completed"
+          if [ -d ./scripts ]; then chmod +x ./scripts/*.sh; fi
       - *debug_env
+      - name: Inject Keystore and Replace build.gradle.kts
+        script: |
+            ./scripts/inject_keystore.sh
       - *permission_apk
       - *change_proj_name
       - *update_package_names
       - *change_app_name
       - *Update_SDK_Version
       - *Update_App_Version
-      - *key_store
+#      - *key_store
       - *get_json
       - *Inject_Firebase_Services
       - *get_logo
       - *get_splash
       - *set_launcher_icons
       - *build_apk_release
+      - name: Validate APK Signing
+        script: |
+          echo "🔍 Validating APK signature..."
+          $ANDROID_SDK_ROOT/build-tools/*/apksigner verify --verbose build/app/outputs/flutter-apk/app-release.apk
     artifacts:
       - build/**/outputs/apk/**/*.apk
       - build/**/outputs/bundle/**/*.aab
